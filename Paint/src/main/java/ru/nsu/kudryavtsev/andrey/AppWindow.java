@@ -6,6 +6,7 @@ import ru.nsu.kudryavtsev.andrey.tools.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -99,7 +100,7 @@ public class AppWindow extends MainFrame {
         colorViewer.setIcon(new ImageIcon(c));
     }
 
-    public void onAbout()
+    public void onAbout(ActionEvent evt)
     {
         JOptionPane.showMessageDialog(this, """
                 Paint, version 1.0
@@ -115,12 +116,13 @@ public class AppWindow extends MainFrame {
                 Copyright \u00a9 2022 Kudryavtsev Andrey, FIT, group 19203""", "About Init", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    public void onExit()
+    public void onExit(ActionEvent evt)
     {
         System.exit(0);
     }
 
-    public void onLine() {
+    public void onLine(ActionEvent evt) {
+        selectRelatedButton("Tools", (AbstractButton) evt.getSource());
         LineTool lineTool = (LineTool) tools.get("Line");
         int result = JOptionPane.showOptionDialog(this,
                 lineTool.getDialog(),
@@ -136,7 +138,8 @@ public class AppWindow extends MainFrame {
         workPanel.setCurTool(lineTool);
     }
 
-    public void onShape() {
+    public void onShape(ActionEvent evt) {
+        selectRelatedButton("Tools", (AbstractButton) evt.getSource());
         ShapeTool shapeTool = (ShapeTool) tools.get("Shape");
         int result = JOptionPane.showOptionDialog(this,
                 shapeTool.getDialog(),
@@ -152,15 +155,37 @@ public class AppWindow extends MainFrame {
         workPanel.setCurTool(shapeTool);
     }
 
-    public void onFill() {
+    public void onFill(ActionEvent evt) {
+        selectRelatedButton("Tools", (AbstractButton) evt.getSource());
         workPanel.setCurTool(tools.get("Fill"));
     }
 
-    public void onClear() {
+    private void selectRelatedButton(String selectedButtonGroupName, AbstractButton selectedButton) {
+        ButtonGroup relatedButtonGroup;
+
+        if (radioButtonGroups.get(selectedButtonGroupName).isSelected(selectedButton.getModel())) {
+            relatedButtonGroup = toggleButtonGroups.get(selectedButtonGroupName);
+        } else if (toggleButtonGroups.get(selectedButtonGroupName).isSelected(selectedButton.getModel())) {
+            relatedButtonGroup = radioButtonGroups.get(selectedButtonGroupName);
+        } else {
+            throw new RuntimeException("Radio or toggle button without group");
+        }
+
+        var iter = relatedButtonGroup.getElements().asIterator();
+        while (iter.hasNext()) {
+            var relatedButton = iter.next();
+            if (relatedButton.getActionCommand().equals(selectedButton.getActionCommand())) {
+                relatedButtonGroup.setSelected(relatedButton.getModel(), true);
+                return;
+            }
+        }
+    }
+
+    public void onClear(ActionEvent evt) {
         workPanel.clearArea();
     }
 
-    public void onPalette() {
+    public void onPalette(ActionEvent evt) {
         Color color = JColorChooser.showDialog(this, "Choose a color", DEFAULT_COLOR);
         if (color != null) {
             updateColorViewer(color);
@@ -168,7 +193,7 @@ public class AppWindow extends MainFrame {
         }
     }
 
-    public void onSave() {
+    public void onSave(ActionEvent evt) {
         File file = FileUtils.getSaveFileName(this, "png", "png image");
         if (file == null) {
             return;
@@ -180,7 +205,7 @@ public class AppWindow extends MainFrame {
         }
     }
 
-    public void onOpen() {
+    public void onOpen(ActionEvent evt) {
         File file = FileUtils.getOpenFileName(this, "png", "png image");
         if (file == null) {
             return;

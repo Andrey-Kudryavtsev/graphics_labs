@@ -1,6 +1,7 @@
 package ru.nsu.kudryavtsev.andrey;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
@@ -17,8 +18,8 @@ public class MainFrame extends JFrame {
     private static final long serialVersionUID = 1L;
     private JMenuBar menuBar;
     protected JToolBar toolBar;
-    private final HashMap<String, ButtonGroup> radioButtonGroups = new HashMap<>();
-    private final HashMap<String, ButtonGroup> toggleButtonGroups = new HashMap<>();
+    public final HashMap<String, ButtonGroup> radioButtonGroups = new HashMap<>();
+    public final HashMap<String, ButtonGroup> toggleButtonGroups = new HashMap<>();
 
     /**
      * Default constructor which sets up L&F and creates tool-bar and menu-bar
@@ -62,10 +63,10 @@ public class MainFrame extends JFrame {
         item.setToolTipText(tooltip);
         if(icon != null)
             item.setIcon(new ImageIcon(getClass().getResource("/"+icon), title));
-        final Method method = getClass().getMethod(actionMethod);
+        final Method method = getClass().getMethod(actionMethod, ActionEvent.class);
         item.addActionListener(evt -> {
             try {
-                method.invoke(MainFrame.this);
+                method.invoke(MainFrame.this, evt);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -77,14 +78,15 @@ public class MainFrame extends JFrame {
             throws SecurityException, NoSuchMethodException
     {
         JRadioButtonMenuItem item = new JRadioButtonMenuItem(title);
+        item.setActionCommand(title);
         item.setMnemonic(mnemonic);
         item.setToolTipText(tooltip);
-        if(icon != null)
+        if (icon != null)
             item.setIcon(new ImageIcon(getClass().getResource("/"+icon), title));
-        final Method method = getClass().getMethod(actionMethod);
+        final Method method = getClass().getMethod(actionMethod, ActionEvent.class);
         item.addActionListener(evt -> {
             try {
-                method.invoke(MainFrame.this);
+                method.invoke(MainFrame.this, evt);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -299,6 +301,7 @@ public class MainFrame extends JFrame {
 
     public JToggleButton createToolBarToggleButton(JMenuItem item, String group) {
         JToggleButton button = new JToggleButton(item.getIcon());
+        button.setActionCommand(item.getText());
         for(ActionListener listener: item.getActionListeners())
             button.addActionListener(listener);
         button.setToolTipText(item.getToolTipText());
