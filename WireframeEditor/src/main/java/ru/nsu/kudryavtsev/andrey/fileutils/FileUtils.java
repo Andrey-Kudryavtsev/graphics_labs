@@ -1,8 +1,15 @@
 package ru.nsu.kudryavtsev.andrey.fileutils;
 
+import ru.nsu.kudryavtsev.andrey.editdialog.BSpline;
+import ru.nsu.kudryavtsev.andrey.editdialog.EditBox;
+import ru.nsu.kudryavtsev.andrey.wireframe.Wireframe;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
-import java.io.File;
+import java.awt.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 public class FileUtils {
     private static File dataDirectory = null;
@@ -20,7 +27,7 @@ public class FileUtils {
             }
             for(File f: dataDirectory.listFiles())
             {
-                if(f.isDirectory() && f.getName().endsWith("_Data"))
+                if(f.isDirectory() && f.getName().equals("wireframes"))
                 {
                     dataDirectory = f;
                     break;
@@ -76,9 +83,61 @@ public class FileUtils {
     }
 
     public static boolean isCorrectExtForOpen(File file) {
-        return (file.getName().endsWith(".png") ||
-                file.getName().endsWith(".jpg") ||
-                file.getName().endsWith(".bmp") ||
-                file.getName().endsWith(".gif"));
+        return file.getName().endsWith(".txt");
+    }
+
+    public static void saveWireframe(File file, Wireframe wireframe) throws IOException {
+        PrintWriter writer = new PrintWriter(new FileWriter(file));
+        writer.printf("%d\n", wireframe.getGeneratrix().getK());
+        writer.printf("%d\n", wireframe.getGeneratrix().getN());
+        writer.printf("%d\n", wireframe.getM1());
+        writer.printf("%d\n", wireframe.getM2());
+        for (Point point : wireframe.getGeneratrix().getControlPoints()) {
+            writer.printf("%d %d\n", point.x, point.y);
+        }
+        writer.close();
+    }
+
+    public static Wireframe loadWireframe(File file) throws IOException {
+        Scanner reader = new Scanner(file);
+        int K = reader.nextInt();
+        if (K < EditBox.MIN_CONTROL_POINTS || K > EditBox.MAX_CONTROL_POINTS) {
+            reader.close();
+            return null;
+        }
+
+        int N = reader.nextInt();
+        if (N < EditBox.MIN_SECTION_SEGMENTS || N > EditBox.MAX_SECTION_SEGMENTS) {
+            reader.close();
+            return null;
+        }
+
+        int M1 = reader.nextInt();
+        if (M1 < EditBox.MIN_GENERATRICES || M1 > EditBox.MAX_GENERATRICES) {
+            reader.close();
+            return null;
+        }
+
+        int M2 = reader.nextInt();
+        if (M2 < EditBox.MIN_CIRCLE_SEGMENTS || M2 > EditBox.MAX_CIRCLE_SEGMENTS) {
+            reader.close();
+            return null;
+        }
+
+        ArrayList<Point> controlPoints = new ArrayList<>();
+        while (reader.hasNextInt()) {
+            int x = reader.nextInt();
+            if (!reader.hasNextInt()) {
+                reader.close();
+                return null;
+            }
+            int y = reader.nextInt();
+            controlPoints.add(new Point(x, y));
+        }
+        if (controlPoints.size() != K) {
+            reader.close();
+            return null;
+        }
+        return new Wireframe(new BSpline(controlPoints, N), M1, M2);
     }
 }

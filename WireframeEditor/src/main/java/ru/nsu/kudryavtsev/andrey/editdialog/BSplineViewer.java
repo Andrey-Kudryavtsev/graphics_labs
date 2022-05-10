@@ -9,7 +9,7 @@ import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 
-public class BSplineViewer extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
+public class BSplineViewer extends JPanel implements MouseListener, MouseMotionListener {
     private final int CONTROL_POINT_RADIUS = 5;
 
     @Getter @Setter
@@ -22,11 +22,8 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
     private int prefWidth;
     private int prefHeight;
 
-    // for cartesian coordinates
     private Point origin;
-    private int zoom = 1;
     private int lineStep = 150;
-    private int valStep = 150;
 
     private final JScrollPane sp;
     @Setter
@@ -52,7 +49,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
 
         addMouseListener(this);
         addMouseMotionListener(this);
-//        addMouseWheelListener(this);
     }
 
     public void setK(int K) {
@@ -88,7 +84,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
         return bSpline.getControlPoints().get(activeControlPointIdx);
     }
 
-    /////////// TODO: make it through TransformUtils
     private int inW_x(int x) {
         return x+origin.x;
     }
@@ -108,7 +103,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
     private int inL_y(int y) {
         return origin.y-y;
     }
-    ////////////
 
     private void drawCartesianCoordinates(Graphics2D g2d) {
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -126,25 +120,25 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
         int i = 1;
         for (int x = origin.x+lineStep; x < panelDimension.width; x+=lineStep) {
             g2d.drawLine(x, 0, x, panelDimension.height-1);
-            g2d.drawString(Integer.toString(i*valStep*zoom), x+marginX, origin.y+marginY);
+            g2d.drawString(Integer.toString(i*lineStep), x+marginX, origin.y+marginY);
             i++;
         }
         i = 1;
         for (int x = origin.x-lineStep; x >= 0; x-=lineStep) {
             g2d.drawLine(x, 0, x, panelDimension.height-1);
-            g2d.drawString(Integer.toString(-i*valStep*zoom), x+marginX, origin.y+marginY);
+            g2d.drawString(Integer.toString(-i*lineStep), x+marginX, origin.y+marginY);
             i++;
         }
         i = 1;
         for (int y = origin.y+lineStep; y < panelDimension.height; y+=lineStep) {
             g2d.drawLine(0, y, panelDimension.width-1, y);
-            g2d.drawString(Integer.toString(-i*valStep*zoom), origin.x+marginX, y+marginY);
+            g2d.drawString(Integer.toString(-i*lineStep), origin.x+marginX, y+marginY);
             i++;
         }
         i = 1;
         for (int y = origin.y-lineStep; y >= 0; y-=lineStep) {
             g2d.drawLine(0, y, panelDimension.width-1, y);
-            g2d.drawString(Integer.toString(i*valStep*zoom), origin.x+marginX, y+marginY);
+            g2d.drawString(Integer.toString(i*lineStep), origin.x+marginX, y+marginY);
             i++;
         }
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
@@ -177,7 +171,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
         g2d.setColor(Color.BLUE);
         g2d.setStroke(new BasicStroke(2));
 
-//        bSpline.recalculate();
         Point[] bSplinePoints = bSpline.getBSplinePoints();
         for (int i = 0; i < bSplinePoints.length-1; i++) {
             Point curP = inW_p(bSplinePoints[i]);
@@ -205,11 +198,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
         sp.revalidate();
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-
-    }
-
     private int getSelectedPointIdx(int x, int y) {
         int selectionRadius = CONTROL_POINT_RADIUS + 4;
         ArrayList<Point> controlPoints = bSpline.getControlPoints();
@@ -223,7 +211,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
 
     @Override
     public void mousePressed(MouseEvent e) {
-//        System.out.println("Pressed on " + e.getX() + " " + e.getY());
         int activeControlPointIdx = getSelectedPointIdx(e.getX(), e.getY());
         if (activeControlPointIdx != -1) {
             this.activeControlPointIdx = activeControlPointIdx;
@@ -235,32 +222,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
         lastX = e.getX();
         lastY = e.getY();
         repaint();
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    private void translateControlPoints(int dx, int dy) {
-        if (dx == 0 && dy == 0) {
-            return;
-        }
-
-        ArrayList<Point> controlPoints = bSpline.getControlPoints();
-        for (var point : controlPoints) {
-            point.translate(dx, dy);
-        }
     }
 
     private boolean insideViewport(int x, int y) {
@@ -293,7 +254,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
                 prefWidth += dx;
             } else if (dx < 0 && viewPosition.x == 0) {
                 prefWidth -= dx;
-//                translateControlPoints(-dx, 0);
                 origin.translate(-dx, 0);
                 lastX -= dx;
             }
@@ -301,7 +261,6 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
                 prefHeight += dy;
             } else if (dy < 0 && viewPosition.y == 0) {
                 prefHeight -= dy;
-//                translateControlPoints(0, -dy);
                 origin.translate(0, -dy);
                 lastY -= dy;
             }
@@ -313,17 +272,27 @@ public class BSplineViewer extends JPanel implements MouseListener, MouseMotionL
     }
 
     @Override
-    public void mouseMoved(MouseEvent e) {
+    public void mouseClicked(MouseEvent e) {
 
     }
 
     @Override
-    public void mouseWheelMoved(MouseWheelEvent e) {
-        int nextZoom = zoom + e.getWheelRotation();
-        if (nextZoom < 1 || nextZoom > 10) {
-            return;
-        }
-        zoom = nextZoom;
-        repaint();
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
     }
 }

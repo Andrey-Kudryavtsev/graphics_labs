@@ -1,6 +1,7 @@
 package ru.nsu.kudryavtsev.andrey.editdialog;
 
 import lombok.Getter;
+import lombok.Setter;
 import ru.nsu.kudryavtsev.andrey.wireframe.Wireframe;
 
 import javax.swing.*;
@@ -12,24 +13,28 @@ public class WireframeEditDialog extends JPanel {
     @Getter
     private Wireframe wireframe;
 
+    public void setWireframe(Wireframe wireframe) {
+        this.wireframe = wireframe;
+        resetChanges();
+    }
+
     public WireframeEditDialog(int width, int height) {
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+        setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
         setPreferredSize(new Dimension(width, height));
 
         JScrollPane sp = new JScrollPane();
         bSplineViewer = new BSplineViewer(sp, width, height);
-        add(sp);
-
         editBox = new EditBox(bSplineViewer);
-        add(editBox);
-
         bSplineViewer.setActivePointListener(editBox);
+
+        add(editBox);
+        add(sp);
 
         wireframe = Wireframe.createDefaultWireframe();
     }
 
     public void applyChanges() {
-        wireframe = new Wireframe(bSplineViewer.getBSpline(), editBox.getM1(), editBox.getM2());
+        wireframe = new Wireframe(bSplineViewer.getBSpline().copy(), editBox.getM1(), editBox.getM2());
     }
 
     public void resetChanges() {

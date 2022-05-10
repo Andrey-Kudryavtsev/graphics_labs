@@ -85,7 +85,7 @@ public class MainFrame extends JFrame {
         final Method method = getClass().getMethod(actionMethod, ActionEvent.class);
         item.addActionListener(evt -> {
             try {
-                selectRelatedButton("Tools", (AbstractButton) evt.getSource()); // TODO: string is bad
+                selectRelatedButton("Tools", (AbstractButton) evt.getSource());
                 method.invoke(MainFrame.this, evt);
             } catch (Exception e) {
                 throw new RuntimeException(e);

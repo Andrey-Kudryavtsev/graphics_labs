@@ -30,6 +30,7 @@ public class EditBox extends JPanel implements ActivePointListener {
     public EditBox(BSplineViewer bSplineViewer) {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 
+        add(new JSeparator());
         addSpinner("<html><b>Amount of control points (K)</b></html>",
                 BSpline.DEFAULT_K, MIN_CONTROL_POINTS, MAX_CONTROL_POINTS, STEP_CONTROL_POINTS,
                 bSplineViewer::setK);
@@ -49,24 +50,30 @@ public class EditBox extends JPanel implements ActivePointListener {
         activePointXSpinner = addSpinner("<html><b>Active point X</b></html>",
                 bSplineViewer.getActivePoint().x, null, null, 1,
                 bSplineViewer::setActiveControlPointX);
-        activePointXSpinner.setPreferredSize(new Dimension(80, 20));
 
         activePointYSpinner = addSpinner("<html><b>Active point Y</b></html>",
                 bSplineViewer.getActivePoint().y, null, null, 1,
                 bSplineViewer::setActiveControlPointY);
-        activePointYSpinner.setPreferredSize(new Dimension(80, 20));
     }
 
     private JSpinner addSpinner(String text, Integer curVal, Integer min, Integer max, Integer step, SpinnerListener listener) {
         JPanel subPanel = new JPanel();
+        subPanel.setLayout(new BoxLayout(subPanel, BoxLayout.LINE_AXIS));
+        subPanel.setAlignmentX(LEFT_ALIGNMENT);
+
+        subPanel.add(Box.createRigidArea(new Dimension(0, 40)));
         subPanel.add(new JLabel(text));
         SpinnerModel model = new SpinnerNumberModel(curVal, min, max, step);
         JSpinner spinner = new JSpinner(model);
         if (listener != null) {
             spinner.addChangeListener(evt -> listener.set((int) spinner.getValue()));
         }
+        spinner.setPreferredSize(new Dimension(80, 20));
+        spinner.setMaximumSize(new Dimension(80, 20));
         subPanel.add(spinner);
         add(subPanel);
+        add(Box.createRigidArea(new Dimension(0, 50)));
+        add(new JSeparator());
 
         return spinner;
     }

@@ -1,7 +1,6 @@
 package ru.nsu.kudryavtsev.andrey.wireframe;
 
 import lombok.Getter;
-import lombok.Setter;
 import ru.nsu.kudryavtsev.andrey.matrixutils.Matrix;
 import ru.nsu.kudryavtsev.andrey.matrixutils.MatrixUtils;
 import ru.nsu.kudryavtsev.andrey.matrixutils.Vector;
@@ -11,9 +10,10 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class Viewport extends JPanel implements MouseWheelListener, MouseMotionListener, MouseListener {
-    @Getter @Setter
+    @Getter
     private Wireframe wireframe;
     private final Camera camera;
+    private  int zoom = 100;
 
     int lastX = -1;
     int lastY = -1;
@@ -22,6 +22,11 @@ public class Viewport extends JPanel implements MouseWheelListener, MouseMotionL
                                                               {0, 1, 0, 0},
                                                               {0, 0, 1, 0},
                                                               {0, 0, 0, 1}});
+
+    public void setWireframe(Wireframe wireframe) {
+        this.wireframe = wireframe;
+        repaint();
+    }
 
     public Viewport(int width, int height) {
         setPreferredSize(new Dimension(width, height));
@@ -68,17 +73,25 @@ public class Viewport extends JPanel implements MouseWheelListener, MouseMotionL
         int circleSections = wireframe.getM1()*wireframe.getM2();
         int N = wireframe.getGeneratrix().getN();
         int K = wireframe.getGeneratrix().getK();
-        for (int circleNum = 0; circleNum < N*(K - 3) + 1; circleNum += N) {
-            Matrix Rj = calcResultMatrix(Mpersp, 0, circleSections);
-            Point pp = bSplinePoints[circleNum];
-            Point ppdraw = getProjPoint(Rj, pp);
-            for (int i = 1; i <= circleSections; i++) {
-                Rj = calcResultMatrix(Mpersp, i, circleSections);
-                Point cp = bSplinePoints[circleNum];
-                Point cpdraw = getProjPoint(Rj, cp);
-                g2d.drawLine(ppdraw.x, ppdraw.y, cpdraw.x, cpdraw.y);
+        int circleN = K-2;
 
-                ppdraw = cpdraw;
+        Matrix Ri = calcResultMatrix(Mpersp, 0, circleSections);
+        Point[] pps = new Point[circleN];
+        for (int circleIdx = 0; circleIdx < circleN; circleIdx++) {
+            int ppidx = circleIdx*N;
+            Point pp = bSplinePoints[ppidx];
+            Point ppdraw = getProjPoint(Ri, pp);
+            pps[circleIdx] = ppdraw;
+        }
+        for (int i = 1; i <= circleSections; i++) {
+            Ri = calcResultMatrix(Mpersp, i, circleSections);
+            for (int circleIdx = 0; circleIdx < circleN; circleIdx++) {
+                int cpidx = circleIdx*N;
+                Point cp = bSplinePoints[cpidx];
+                Point cpdraw = getProjPoint(Ri, cp);
+                Point ppdraw = pps[circleIdx];
+                g2d.drawLine(ppdraw.x, ppdraw.y, cpdraw.x, cpdraw.y);
+                pps[circleIdx] = cpdraw;
             }
         }
     }
@@ -87,7 +100,7 @@ public class Viewport extends JPanel implements MouseWheelListener, MouseMotionL
         Vector CVVPoint = MatrixUtils.MVMul(matrix, new Vector(new float[] {point.x, point.y, 1, 1}));
 
         float a = (1f*getWidth()) / (CVVPoint.getElem(3) * 2f);
-        float b = (1f*getHeight()) / (CVVPoint.getElem(3) * 2f);;
+        float b = (1f*getHeight()) / (CVVPoint.getElem(3) * 2f);
         Matrix normalizeDisplayMatrix = new Matrix(new float[][] {{1f/CVVPoint.getElem(3), 0,  0,                        0},
                                                                   {                        0, a,  0,                        a},
                                                                   {                        0, 0, -b,                        b},
@@ -97,12 +110,12 @@ public class Viewport extends JPanel implements MouseWheelListener, MouseMotionL
     }
 
     private Matrix calcPerspectiveProjectionMatrix() {
-        int maxY = wireframe.getGeneratrix().getMaxY() * 2;
-        int xf = 10 - camera.getPosition().x;
-        int xb = xf + maxY*2;
+        int boxSize = wireframe.getGeneratrix().getMaxCoord() * 2;
+        int xf = 10 - camera.getPosition().x + zoom;
+        int xb = xf + boxSize*2;
         Matrix perspectiveProjectionMatrix = MatrixUtils.createPerspectiveProjectionMatrix(xf, xb, getWidth(), getHeight());
 
-        Matrix worldAndCameraMatrix = MatrixUtils.createTranslateMatrix(xf + maxY - camera.getPosition().x, 0, 0);
+        Matrix worldAndCameraMatrix = MatrixUtils.createTranslateMatrix(xf + boxSize - camera.getPosition().x, 0, 0);
 
         float centerZ = wireframe.getGeneratrix().getCenterX();
         Matrix centerMatrix = MatrixUtils.createTranslateMatrix(0, 0, -centerZ);
@@ -126,12 +139,11 @@ public class Viewport extends JPanel implements MouseWheelListener, MouseMotionL
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        int scaleFactor = 50;
-        if (camera.getPosition().x + e.getWheelRotation()*scaleFactor >= 0) {
+        int scaleFactor = 100;
+        if (zoom + e.getWheelRotation()*scaleFactor < 100) {
             return;
         }
-        camera.getPosition().translate(e.getWheelRotation()*scaleFactor, 0, 0);
-        System.out.println(camera.getPosition().x);
+        zoom += e.getWheelRotation() * scaleFactor;
         repaint();
     }
 

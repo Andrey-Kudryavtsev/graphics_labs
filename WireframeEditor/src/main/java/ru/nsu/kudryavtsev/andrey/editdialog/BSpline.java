@@ -5,10 +5,10 @@ import lombok.Setter;
 import ru.nsu.kudryavtsev.andrey.matrixutils.Matrix;
 import ru.nsu.kudryavtsev.andrey.matrixutils.MatrixUtils;
 import ru.nsu.kudryavtsev.andrey.matrixutils.Vector;
-import ru.nsu.kudryavtsev.andrey.wireframe.BoundingBox;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class BSpline {
     public static final int DEFAULT_N = 12;
@@ -27,14 +27,27 @@ public class BSpline {
     private final ArrayList<Point> controlPoints;
     @Getter
     private Point[] bSplinePoints;
-    @Getter
-    private BoundingBox boundingBox;
+    private int maxCoord = -1;
+    private Float centerX = null;
 
     public BSpline(ArrayList<Point> controlPoints, int N) {
         this.K = controlPoints.size();
         this.N = N;
         this.controlPoints = controlPoints;
         recalculate();
+    }
+
+    public BSpline(Point[] bSplinePoints, ArrayList<Point> controlPoints, int N) {
+        this.K = controlPoints.size();
+        this.controlPoints = new ArrayList<>();
+        this.controlPoints.addAll(controlPoints);
+
+        this.bSplinePoints = Arrays.copyOf(bSplinePoints, bSplinePoints.length);
+        this.N = N;
+    }
+
+    public BSpline copy() {
+        return new BSpline(this.bSplinePoints, this.controlPoints, this.N);
     }
 
     public static BSpline createDefaultBSpline() {
@@ -103,23 +116,30 @@ public class BSpline {
     }
 
     public float getCenterX() {
+        if (centerX != null) {
+            return centerX;
+        }
         int minX = bSplinePoints[0].x;
         int maxX = bSplinePoints[0].x;
         for (int i = 1; i < bSplinePoints.length; i++) {
             minX = Math.min(minX, bSplinePoints[i].x);
             maxX = Math.max(maxX, bSplinePoints[i].x);
         }
-        return (maxX+minX)/2f;
+        centerX = (maxX+minX)/2f;
+        return centerX;
     }
 
-    public int getMaxY() {
-        int maxY = -1;
-        for (Point point : bSplinePoints) {
-            maxY = Math.max(Math.abs(point.y), maxY);
-
-            maxY = Math.max(Math.abs(point.x), maxY); // is it needed?
+    public int getMaxCoord() {
+        if (this.maxCoord != -1) {
+            return this.maxCoord;
         }
-        return maxY;
+        int maxCoord = -1;
+        for (Point point : bSplinePoints) {
+            maxCoord = Math.max(Math.abs(point.y), maxCoord);
+            maxCoord = Math.max(Math.abs(point.x), maxCoord);
+        }
+        this.maxCoord = maxCoord;
+        return this.maxCoord;
     }
 
 //    public Point[] calculate(int sectionNum) {

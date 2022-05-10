@@ -1,7 +1,5 @@
 package ru.nsu.kudryavtsev.andrey.matrixutils;
 
-import java.awt.*;
-
 public class MatrixUtils {
     public enum Axis {
         X,
